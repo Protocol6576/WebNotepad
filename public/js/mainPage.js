@@ -13,6 +13,19 @@ var myData = [
     }
 ]
 
+// У Б О Г О
+// У Б О Г О
+// У Б О Г О
+function getEnv() { // ИЗМЕНИТЬ!!!!!! УЖАСНО
+    webix.ajax().get('api/getEnv').then(function(data){
+        data = data.text();
+        data = Number(data);
+
+        $$("NoteTextArea").define("attributes", { maxlength: data });
+        $$("NoteTextArea").refresh();
+    });
+};
+
 // *** Функции по обращению к серверу ***
 
 function loadNoteList() {
@@ -20,7 +33,8 @@ function loadNoteList() {
     $$("NotesList").load(function() {
         return webix.ajax().get('api/getNoteTitles');
     });
-    disableTextarea();
+    disableTextarea();  // И почему оно блин тут?
+                        //А может оно нужно?
 }
 
 function redactNoteContent(noteName, newText) {
@@ -100,6 +114,8 @@ function disableTextarea() {
 
 webix.ready(function(){
 
+
+
     webix.ui({
         rows: [
             {
@@ -161,10 +177,6 @@ webix.ready(function(){
                                 select: true,
                                 scroll: 'auto',
                                 template:"#rank#. #title#",
-                                ready: function() {
-                                    loadNoteList();
-                                    disableTextarea(); // Переместить бы это куда-нибудь, да вот только у textArea нету параметра "ready" для такого
-                                },
 
                                 onContext:{}, // Позволяет использовать свое контекстное меню
                             },
@@ -198,7 +210,7 @@ webix.ready(function(){
                                 placeholder: 'Напишите что-то здесь',
 
                                 attributes: {
-                                    maxlength: 20,
+                                    maxlength: 1,
                                 },
                                 
                                 css: {
@@ -303,5 +315,10 @@ webix.ready(function(){
         }
         
     });
+
+    // *** Функциии после инициализации ***
+
+    loadNoteList();
+    getEnv();
 
 });

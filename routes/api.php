@@ -31,6 +31,8 @@ Route::get('/createNote/{noteName}', [NotesController::class, 'create']);
 
 Route::get('/deleteNote/{noteName}', [NotesController::class, 'delete']);
 
+Route::get('/getEnv', [NotesController::class, 'getEnv']); // Изменить название
+
 Route::get('/getText/{text}'); // У него есть дети? Приемники? На него кто-то ссылается? ((УБИТЬ ВСЕХ!!))
 
 // Перенести роуты сюда (запросы)
