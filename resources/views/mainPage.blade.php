@@ -6,6 +6,7 @@
     <meta name="description" content="Описание страницы" />
     
     <link rel="stylesheet" type="text/css" href="libs/webixCodebase/webix.css" />
+    <link rel="stylesheet" href="//cdn.webix.com/materialdesignicons/5.8.95/css/materialdesignicons.min.css" type="text/css" charset="utf-8">
     <script src="libs/webixCodebase/webix.js"></script>
 
   </head>

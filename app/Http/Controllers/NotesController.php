@@ -72,8 +72,4 @@ class NotesController extends Controller
             return false; //Файл не существует
         }
     }
-
-    public function getEnv() {
-        return env('NOTE_MAX_LENGTH', -1);
-    }
 }

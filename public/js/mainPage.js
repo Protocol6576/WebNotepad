@@ -13,11 +13,9 @@ var myData = [
     }
 ]
 
-// У Б О Г О
-// У Б О Г О
-// У Б О Г О
-function getEnv() { // ИЗМЕНИТЬ!!!!!! УЖАСНО
-    webix.ajax().get('api/getEnv').then(function(data){
+// ToDo: Сделай чтото с этим..
+function getData() {
+    webix.ajax().get('api/env/getData').then(function(data){
         data = data.text();
         data = Number(data);
 
@@ -26,19 +24,26 @@ function getEnv() { // ИЗМЕНИТЬ!!!!!! УЖАСНО
     });
 };
 
+// ToDo: Сделай чтото с этим..
+function setData(noteMaxLength) {
+    webix.ajax().get('api/env/setData/' + noteMaxLength).then(function(data){
+        getData();
+    });
+};
+
 // *** Функции по обращению к серверу ***
 
 function loadNoteList() {
     $$("NotesList").clearAll(); // Заменить на аргумент в функции load (Который true)
     $$("NotesList").load(function() {
-        return webix.ajax().get('api/getNoteTitles');
+        return webix.ajax().get('api/note/getTitles');
     });
     disableTextarea();  // И почему оно блин тут?
                         //А может оно нужно?
 }
 
 function redactNoteContent(noteName, newText) {
-    var reqResult = webix.ajax().get('api/redactNoteContent/' + noteName + '/' + newText); // Лучше сделать так, или .then?
+    var reqResult = webix.ajax().get('api/note/redactContent/' + noteName + '/' + newText); // Лучше сделать так, или .then? [?] -
 
     if(reqResult) {
         webix.message('Текст заметки изменен');
@@ -49,8 +54,18 @@ function redactNoteContent(noteName, newText) {
 }
 
 function showNoteContent(noteName) {
-    webix.ajax().get('api/showNoteContent/' + noteName).then(function(data) {
+
+    $$("NoteTextArea").setValue(' ');
+    $$("NoteTextArea").disable();
+    $$("NoteTextArea").showProgress({
+        type: "icon",
+        delay: 500,
+        hide: true
+    });
+
+    webix.ajax().get('api/note/showContent/' + noteName).then(function(data) {
         data = data.text();
+
         $$("NoteTextArea").setValue(data);
         $$("NoteTextArea").enable();
         $$("NoteTextArea").focus();
@@ -58,7 +73,7 @@ function showNoteContent(noteName) {
 }
 
 function renameNote(noteName, newNoteName, noteId) {
-    var reqResult = webix.ajax().get('api/renameNote/' + noteName + '/' + newNoteName);
+    var reqResult = webix.ajax().get('api/note/rename/' + noteName + '/' + newNoteName);
 
     if(reqResult) {
         var renameNote = $$("NotesList").getItem(noteId);
@@ -72,7 +87,7 @@ function renameNote(noteName, newNoteName, noteId) {
 }
 
 function createNote(newNoteName) {
-    var reqResult = webix.ajax().get('api/createNote/' + newNoteName);
+    var reqResult = webix.ajax().get('api/note/create/' + newNoteName);
 
     if(reqResult) {
         let newNote = {
@@ -87,7 +102,7 @@ function createNote(newNoteName) {
 }
 
 function deleteNote(noteName, noteId) {
-    var reqResult = webix.ajax().get('api/deleteNote/' + noteName);
+    var reqResult = webix.ajax().get('api/note/delete/' + noteName);
 
     if(reqResult) {
         $$("NotesList").remove(noteId);
@@ -97,7 +112,7 @@ function deleteNote(noteName, noteId) {
     }
 }
 
-function disableTextarea() {
+function disableTextarea() { // ToDo: Разобраться почему всегда == 0. А также посмотреть про overlay Box
     var notesCount = $$("NotesList").count();
 
     $$("NoteTextArea").disable();
@@ -113,9 +128,6 @@ function disableTextarea() {
 
 
 webix.ready(function(){
-
-
-
     webix.ui({
         rows: [
             {
@@ -127,45 +139,28 @@ webix.ready(function(){
 
                         rows: [
                             {
+                                view:"toolbar",
+                                id:"toolbar", // ToDo: Изменить название
                                 height: 40,
                                 type: 'clean',
 
                                 cols: [
                                     {
+                                        view: 'icon',
+                                        icon: 'wxi-dots',
+                                        click: function(){
+                                            if( $$("menu").config.hidden) {
+                                                $$("menu").show();
+                                            } else {
+                                                $$("menu").hide();
+                                            }
+                                        }
+                                    },
+                                    {
                                         view:'search',
                                         id: 'NotesList_input',
 
                                         placeholder: 'Найти...',
-                                    },
-                                    {
-                                        // Обновить список
-                                        view: 'icon',
-                                        icon: 'wxi-sync',
-                                        click: function() {
-                                            loadNoteList();
-                                        },
-                                    },
-                                    {
-                                        // Создать файл. Добавить вывод в случае наличия такого же файла, а не окошко блин
-                                        view: 'icon',
-                                        icon: 'wxi-plus-circle',
-                                        click: function() {
-                                            webix.prompt({
-                                                title:"Создание заметки",
-                                                text:"Введите название новой заметки",
-                                                ok:"Submit",
-                                                cancel:"Cancel",
-                                                input:{
-                                                  required:true,
-                                                  placeholder:"Ваше название",
-                                                },
-                                                width: 350,
-                                            }).then(function(result){
-                                                createNote(result);
-                                            });
-
-                                            
-                                        },
                                     }
                                 ]
                             },
@@ -196,7 +191,7 @@ webix.ready(function(){
                                         view: 'icon',
                                         icon: 'wxi-file',
                                         click: function() {
-                                            var itemId = $$("NotesList").getSelectedItem().title; // Изменить (выглядит ужасно)
+                                            var itemId = $$("NotesList").getSelectedItem().title; // ToDo: Изменить (выглядит ужасно)
                                             var newText = $$("NoteTextArea").getValue();
                                             redactNoteContent(itemId, newText);
                                         },
@@ -205,7 +200,7 @@ webix.ready(function(){
                                 
                             },
                             {
-                                view: 'textarea', // Убрать блин эти бортики! БЕСЯТ!!
+                                view: 'textarea', // ToDo: Убрать блин эти бортики! БЕСЯТ!!
                                 id: 'NoteTextArea',
                                 placeholder: 'Напишите что-то здесь',
 
@@ -245,7 +240,7 @@ webix.ready(function(){
 
         on:{
             onItemClick: function(id) {
-                var context = this.getContext(); // Зачем так много переменных? ИСПРАВИТЪ!!!
+                var context = this.getContext(); // Зачем так много переменных? ИСПРАВИТЪ!!! [?] -
                 var list = context.obj;
                 var itemId = context.id;
                 var itemTitle = list.getItem(itemId).title;
@@ -255,8 +250,8 @@ webix.ready(function(){
                         webix.prompt({
                             title:"Переименование заметки",
                             text:"Введите новое название заметки",
-                            ok:"Submit",
-                            cancel:"Cancel",
+                            ok:"Переименовать",
+                            cancel:"Отменить",
                             input:{
                               required:true,
                               placeholder:"Ваше название",
@@ -288,8 +283,75 @@ webix.ready(function(){
         }
     });
 
-    
     $$("cmenu").attachTo($$("NotesList"));
+
+    // Боковое меню со всеми кнопками
+    webix.ui({ // ToDo: Сделать это.. Рабочим?
+        view: "sidemenu",
+        id: "menu",
+        width: 200,
+        position: "left",
+        body:{
+            view: "list",
+            id: "Sidemenu_list",
+            borderless: true,
+            scroll: false,
+            template: "<span class='webix_icon mdi mdi-#icon#'></span> #value#",
+            data: [
+                {id: 1, value: "Новая заметка", icon: "plus-circle"},
+                {id: 2, value: "Обновить список", icon: "reload"},
+                {id: 3, value: "Настройки", icon: "cog"},
+            ],
+            select: true,
+            type: {
+                height: 40
+            },
+
+            on: {
+                onItemClick: function(id) {
+                    switch (id) {
+                        case '1':
+                            webix.prompt({
+                                title:"Создание заметки",
+                                text:"Введите название новой заметки",
+                                ok:"Создать",
+                                cancel:"Отменить",
+                                input:{
+                                required:true,
+                                placeholder:"Ваше название",
+                                },
+                                width: 350,
+                            }).then(function(result) {
+                                createNote(result);
+                            });
+                            break;
+
+                        case '2':
+                            loadNoteList();
+                            break;
+
+                        case '3':
+                            webix.prompt({
+                                title:"Изменение длины заметки",
+                                text:"Введите новое значение длины заметки",
+                                ok:"Изменить",
+                                cancel:"Отменить",
+                                input:{
+                                required:true,
+                                placeholder:"Ваша длина",
+                                },
+                                width: 350,
+                            }).then(function(result) {
+                                setData(result);
+                            });
+                            break;
+                    };
+
+                    $$("menu").hide();
+                }
+            }
+        }
+    });
 
 
 
@@ -303,7 +365,6 @@ webix.ready(function(){
         })
     });
 
-
     // Загрузка текста из заметки
     $$("NotesList").attachEvent("onSelectChange", function() {
 
@@ -316,9 +377,21 @@ webix.ready(function(){
         
     });
 
-    // *** Функциии после инициализации ***
+    // Появление Прогрес-бара при (пере)загрузке
+    webix.extend($$("NotesList"), webix.ProgressBar);
+    $$("NotesList").showProgress({
+        type: "top",
+        delay:3000,
+        hide:true
+    });
+
+    webix.extend($$("NoteTextArea"), webix.ProgressBar);
+
+
+
+    // *** Функциии после инициализации *** // А их тут надо? или в другом месте? [?] -
 
     loadNoteList();
-    getEnv();
+    getData();
 
 });
