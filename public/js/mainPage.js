@@ -403,6 +403,7 @@ webix.ready(function(){
                     view: 'icon',
                     icon: 'wxi-close',
                     click: function() {
+                        $$('NotesHistoryList').unselect();
                         $$('NotesHistoryWindow').hide();
                     }
                 }

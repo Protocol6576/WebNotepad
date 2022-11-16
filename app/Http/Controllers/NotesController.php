@@ -84,7 +84,7 @@ class NotesController extends Controller
         $date_time = date('m/d/Y h:i:s a', time());
         //$ip_user = '1.1.1.1:0001';
         $path = ('allNotes/'.$note_name.'/note.log');
-        Storage::disk('public')->append($path, '['.$date_time.']'.' '.$ip_user.' '.$note_name.': '.$info);
+        Storage::disk('public')->prepend($path, '['.$date_time.']'.' '.$ip_user.' '.$note_name.': '.$info);
 
         return true;
     }
