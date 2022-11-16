@@ -33,7 +33,7 @@ Route::middleware(['exists'])->prefix('note')->controller(NotesController::class
 
     Route::get('/rename/{noteName}/{newNoteName}', 'rename');
 
-    Route::get('/create/{noteName}', 'create')->withoutMiddleware(['exists']);
+    Route::get('/create/{noteName}', 'create');
 
     Route::get('/delete/{noteName}', 'delete');
 });

@@ -145,8 +145,6 @@ function createNote(newNoteName) {
 function deleteNote(noteName, noteId) {
     var reqResult = webix.ajax().get('api/note/delete/' + noteName).then(function(data) {
         data = data.json();
-
-        webix.message(data);
     });
 
     if(reqResult) {
