@@ -1,4 +1,6 @@
-var myData = [
+// Глобальные переменные 
+
+var myData = [ // Нужно для проверки работоспособности списка. ToDo: Удалить в итоговом варианте
     {
         title: 'Заметка №1',
         rank: '1',
@@ -12,6 +14,12 @@ var myData = [
         rank: '3',
     }
 ]
+
+var autosave_timerId = 1;
+var autosave_eventId = 1;
+var current_note_History = '';
+
+
 
 // ToDo: Сделай чтото с этим..
 function getData() {
@@ -33,17 +41,46 @@ function setData(noteMaxLength) {
 
 // *** Функции по обращению к серверу ***
 
+function loadNoteHistoryList(noteName) {
+    $$("NotesHistoryList").clearAll(); // ToDo: Заменить на аргумент в функции load (Который true)
+    $$("NotesHistoryList").load(function() {
+        return webix.ajax().get('api/note/history/getTitles/' + noteName);
+    });
+}
+
+function showHistoryContent(noteName, historyName) { // ToDo: Повторяется код с showNoteContent, попробовать объеденить
+    //$$("NoteTextArea").blockEvent(); // ToDo: Разобраться нужно ли, и удалить если будет не нужно
+    $$("NoteTextArea").disable();
+    $$("NoteTextArea").setValue(' ');
+
+    $$("NoteTextArea").showProgress({
+        type: "icon",
+        delay: 500,
+        hide: true
+    });
+
+    webix.ajax().get('api/note/history/showContent/' + noteName + '/' + historyName).then(function(data) {
+        data = data.text();
+
+        $$("NoteTextArea").setValue(data);
+        $$("NoteTextArea").enable();
+        $$("NoteTextArea").focus();
+        //$$("NoteTextArea").unblockEvent(); // Если перенести ниже (вне границы .then) то .setValue происходит уже после .unblockEvent, почему-то. ToDo: Разобраться почему
+    });
+
+}
+
 function loadNoteList() {
-    $$("NotesList").clearAll(); // Заменить на аргумент в функции load (Который true)
+    $$("NotesList").clearAll(); // ToDo: Заменить на аргумент в функции load (Который true)
     $$("NotesList").load(function() {
         return webix.ajax().get('api/note/getTitles');
     });
     disableTextarea();  // И почему оно блин тут?
-                        //А может оно нужно?
+                        // ToDo: А может оно нужно?
 }
 
 function redactNoteContent(noteName, newText) {
-    var reqResult = webix.ajax().get('api/note/redactContent/' + noteName + '/' + newText); // Лучше сделать так, или .then? [?] -
+    var reqResult = webix.ajax().get('api/note/redactContent/' + noteName + '/' + newText);
 
     if(reqResult) {
         webix.message('Текст заметки изменен');
@@ -55,8 +92,10 @@ function redactNoteContent(noteName, newText) {
 
 function showNoteContent(noteName) {
 
-    $$("NoteTextArea").setValue(' ');
+    //$$("NoteTextArea").blockEvent(); // ToDo: Разобраться нужно ли, и удалить если будет не нужно
     $$("NoteTextArea").disable();
+    $$("NoteTextArea").setValue(' ');
+
     $$("NoteTextArea").showProgress({
         type: "icon",
         delay: 500,
@@ -69,7 +108,9 @@ function showNoteContent(noteName) {
         $$("NoteTextArea").setValue(data);
         $$("NoteTextArea").enable();
         $$("NoteTextArea").focus();
+        //$$("NoteTextArea").unblockEvent(); // Если перенести ниже (вне границы .then) то .setValue происходит уже после .unblockEvent, почему-то. ToDo: Разобраться почему
     });
+
 }
 
 function renameNote(noteName, newNoteName, noteId) {
@@ -102,7 +143,11 @@ function createNote(newNoteName) {
 }
 
 function deleteNote(noteName, noteId) {
-    var reqResult = webix.ajax().get('api/note/delete/' + noteName);
+    var reqResult = webix.ajax().get('api/note/delete/' + noteName).then(function(data) {
+        data = data.json();
+
+        webix.message(data);
+    });
 
     if(reqResult) {
         $$("NotesList").remove(noteId);
@@ -112,7 +157,9 @@ function deleteNote(noteName, noteId) {
     }
 }
 
-function disableTextarea() { // ToDo: Разобраться почему всегда == 0. А также посмотреть про overlay Box
+// ** Остальные функции **
+
+function disableTextarea() { // "Разобраться почему всегда == 0" - потому что при возврате false в контроллере все крашится. ToDo: Разобраться. А также посмотреть про overlay Box
     var notesCount = $$("NotesList").count();
 
     $$("NoteTextArea").disable();
@@ -121,6 +168,24 @@ function disableTextarea() { // ToDo: Разобраться почему все
     } else {
         $$("NoteTextArea").setValue('Выберите заметку');
     }
+}
+
+function autosave_set(autosave_value) {
+    if(autosave_value) {
+        autosave_eventId = $$("NoteTextArea").attachEvent("onKeyPress", function() {
+            clearTimeout(autosave_timerId);
+            var itemId = $$("NotesList").getSelectedItem().title; // ToDo: Изменить (выглядит ужасно)
+            var newText = $$("NoteTextArea").getValue();
+    
+            autosave_timerId = setTimeout(redactNoteContent, 3000, itemId, newText);
+        });
+    } else {
+        $$("NoteTextArea").detachEvent(autosave_eventId);
+    }
+}
+
+function showMessage(text) { // ToDo: Удалить в итоговом варианте 
+    webix.message(text);
 }
 
 
@@ -140,7 +205,7 @@ webix.ready(function(){
                         rows: [
                             {
                                 view:"toolbar",
-                                id:"toolbar", // ToDo: Изменить название
+                                id:"mainToolbar",
                                 height: 40,
                                 type: 'clean',
 
@@ -168,12 +233,19 @@ webix.ready(function(){
                                 view: 'list',
                                 id: 'NotesList',
                                 data: ' ', // НЕ УДАЛЯТЬ! Иначе не произайдет прогрузки
+                                            // Я глупый или да? Все и так работает без этого. ToDo: Проверить
 
                                 select: true,
+                                drag: true,
                                 scroll: 'auto',
-                                template:"#rank#. #title#",
+                                template:"#rank#. #title# <span class='webix_icon mdi mdi-close remove-icon' title='Remove'></span>",
 
                                 onContext:{}, // Позволяет использовать свое контекстное меню
+                                onClick:{
+                                    "remove-icon": function(ev, id){
+                                        $$("NotesList").remove(id);
+                                    }
+                                }
                             },
 
                         ]
@@ -181,17 +253,27 @@ webix.ready(function(){
                     {
                         // Текстовое поле справа
                         rows: [
-                            {    
+                            {
+                                view:"toolbar",
+                                id:"currNoteToolbar",
                                 cols: [
                                     {
                                         
+                                    },
+                                    {
+                                      view: 'checkbox',
+                                      id: 'autosave_checkbox',
+                                      label: 'Автосохранение',
+                                      value: '0',
+                                      labelWidth: 120,
+                                      width: 150
                                     },
                                     {
                                         // Загрузить данные
                                         view: 'icon',
                                         icon: 'wxi-file',
                                         click: function() {
-                                            var itemId = $$("NotesList").getSelectedItem().title; // ToDo: Изменить (выглядит ужасно)
+                                            var itemId = $$("NotesList").getSelectedItem().title; // "Изменить (выглядит ужасно)" - а разве это так? ToDo: Подумать на этим
                                             var newText = $$("NoteTextArea").getValue();
                                             redactNoteContent(itemId, newText);
                                         },
@@ -227,6 +309,17 @@ webix.ready(function(){
 
     // *** Дополнительные элементы интерфейса ***
 
+    // Появление Прогрес-бара при (пере)загрузке
+    webix.extend($$("NotesList"), webix.ProgressBar);
+    $$("NotesList").showProgress({
+        type: "top",
+        delay:3000,
+        hide:true
+    });
+
+    // Прогрес-бар (иконка) при обновлении компонента
+    webix.extend($$("NoteTextArea"), webix.ProgressBar);
+
     // Контекстное меню для списка заметок
     webix.ui({ 
         view:"contextmenu",
@@ -235,12 +328,12 @@ webix.ready(function(){
             "Переименовать",
             "Удалить",
             { $template:"Separator" },
-            "Логи",
+            "История",
         ],
 
         on:{
             onItemClick: function(id) {
-                var context = this.getContext(); // Зачем так много переменных? ИСПРАВИТЪ!!! [?] -
+                var context = this.getContext();
                 var list = context.obj;
                 var itemId = context.id;
                 var itemTitle = list.getItem(itemId).title;
@@ -273,8 +366,10 @@ webix.ready(function(){
                             deleteNote(itemTitle, itemId);
                         });
                         break;
-                    case "Логи":
-                        webix.message("**Сделать вывод логов**");
+                    case "История":
+                        current_note_History = itemTitle;
+                        loadNoteHistoryList(current_note_History)
+                        $$('NotesHistoryWindow').show();
                         break;
                 };
                 
@@ -285,8 +380,49 @@ webix.ready(function(){
 
     $$("cmenu").attachTo($$("NotesList"));
 
+    // Меню с историей заметки
+    webix.ui({
+        view:"window",
+        id:"NotesHistoryWindow",
+        height:250,
+        width:300,
+        left:50, top:50,
+        move:true,
+        head:{
+            view: 'toolbar',
+            id: 'NotesHisoryWindowToolBar',
+            cols: [
+                {
+                    width: 4,
+                },
+                {
+                    view: 'label',
+                    label: 'История заметки',
+                },
+                {
+                    view: 'icon',
+                    icon: 'wxi-close',
+                    click: function() {
+                        $$('NotesHistoryWindow').hide();
+                    }
+                }
+            ]
+        },
+        body:{
+            view: 'list',
+            id: 'NotesHistoryList',
+            data: ' ', // НЕ УДАЛЯТЬ! Иначе не произайдет прогрузки
+                        // Я глупый или да? Все и так работает без этого. ToDo: Проверить
+
+            select: true,
+            drag: true,
+            scroll: 'auto',
+            template:"#title#",
+        }
+    });
+
     // Боковое меню со всеми кнопками
-    webix.ui({ // ToDo: Сделать это.. Рабочим?
+    webix.ui({
         view: "sidemenu",
         id: "menu",
         width: 200,
@@ -377,21 +513,26 @@ webix.ready(function(){
         
     });
 
-    // Появление Прогрес-бара при (пере)загрузке
-    webix.extend($$("NotesList"), webix.ProgressBar);
-    $$("NotesList").showProgress({
-        type: "top",
-        delay:3000,
-        hide:true
+    // Загрузка текста из истории
+    $$("NotesHistoryList").attachEvent("onSelectChange", function() {
+
+        if($$("NotesHistoryList").getSelectedId()) {
+            var itemId = $$("NotesHistoryList").getSelectedItem().title; // Изменить (выглядит ужасно)
+            showHistoryContent(current_note_History, itemId);
+        }
+        
     });
 
-    webix.extend($$("NoteTextArea"), webix.ProgressBar);
+    // Выбор автосейва (Включение-выключение)
+    $$("autosave_checkbox").attachEvent("onChange", function(newValue, oldValue){
+        autosave_set(newValue);
+    });
 
 
-
-    // *** Функциии после инициализации *** // А их тут надо? или в другом месте? [?] -
+    
+    // *** Функциии после инициализации ***
 
     loadNoteList();
-    getData();
+    getData(); // "разобратсья почему не запускается" - Не работает из-за $$("NoteTextArea").attachEvent("onChange") ToDo: Разобраться почему
 
 });

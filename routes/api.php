@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\NotesController;
+use App\Http\Controllers\NotesHistoryController;
 use App\Http\Controllers\EnvController;
 
 /*
@@ -22,19 +23,26 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 
 
-Route::prefix('note')->group(function () {
+Route::middleware(['exists'])->prefix('note')->controller(NotesController::class)->group(function () {
 
-    Route::get('/getTitles', [NotesController::class, 'getTitles']);
+    Route::get('/getTitles', 'getTitles')->withoutMiddleware(['exists']);
 
-    Route::get('/redactContent/{noteName}/{noteText}', [NotesController::class, 'redactContent']);
+    Route::get('/redactContent/{noteName}/{noteText}', 'redactContent');
 
-    Route::get('/showContent/{noteName}', [NotesController::class, 'showContent']); // note/show
+    Route::get('/showContent/{noteName}', 'showContent'); // note/show
 
-    Route::get('/rename/{noteName}/{newNoteName}', [NotesController::class, 'rename']);
+    Route::get('/rename/{noteName}/{newNoteName}', 'rename');
 
-    Route::get('/create/{noteName}', [NotesController::class, 'create']);
+    Route::get('/create/{noteName}', 'create')->withoutMiddleware(['exists']);
 
-    Route::get('/delete/{noteName}', [NotesController::class, 'delete']);
+    Route::get('/delete/{noteName}', 'delete');
+});
+
+Route::middleware(['history'])->prefix('note/history')->controller(NotesHistoryController::class)->group(function () {
+
+    Route::get('/getTitles/{noteName}', 'getTitles');
+
+    Route::get('/showContent/{noteName}/{historyName}', 'showContent');
 });
 
 Route::prefix('env')->group(function () {
@@ -48,7 +56,4 @@ Route::prefix('env')->group(function () {
 
 Route::get('/getText/{text}'); // У него есть дети? Приемники? На него кто-то ссылается? ((УБИТЬ ВСЕХ!!))
 
-// Перенести роуты сюда (запросы)
-// + /api по умпочанию
-
-// А еще контроллеры!
+Route::get('/just', [NotesController::class, 'just']); // ToDo: Удалить в итоговом варианте
