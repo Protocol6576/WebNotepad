@@ -33,10 +33,22 @@ function getData() {
 };
 
 // ToDo: Сделай чтото с этим..
-function setData(noteMaxLength) {
-    webix.ajax().get('api/env/setData/' + noteMaxLength).then(function(data){
-        getData();
+function setEnvData(noteMaxLength) {
+    let settings = {
+        NOTE_MAX_LENGTH: $$('note_max_length').getValue(),
+        LOG_MAX_SIZE: $$('log_max_size').getValue(),
+    };
+
+    webix.message(settings.NOTE_MAX_LENGTH);
+
+    /*
+
+    let jsonSettings = JSON.stringify(settings);
+
+    webix.ajax().get('api/env/setData/' + jsonSettings).then(function(data){
+        getEnvData();
     });
+    */
 };
 
 // *** Функции по обращению к серверу ***
@@ -196,57 +208,133 @@ webix.ready(function(){
             {
                 cols: [
                     {
-                        // Меню слева
+                        id: 'viewss', // ToDo: Изменить название
                         width: 300,
-                        type: 'clean',
 
-                        rows: [
+                        cells : [
                             {
-                                view:"toolbar",
-                                id:"mainToolbar",
-                                height: 40,
+                                // Элемент со списком заметок
                                 type: 'clean',
+                                id: 'Uno', // ToDO: Изменить название
 
-                                cols: [
+                                rows: [
                                     {
-                                        view: 'icon',
-                                        icon: 'wxi-dots',
-                                        click: function(){
-                                            if( $$("menu").config.hidden) {
-                                                $$("menu").show();
-                                            } else {
-                                                $$("menu").hide();
+                                        view:"toolbar",
+                                        id:"mainToolbar",
+                                        height: 40,
+                                        type: 'clean',
+
+                                        cols: [
+                                            {
+                                                view: 'icon',
+                                                icon: 'wxi-dots',
+                                                click: function(){
+                                                    if( $$("menu").config.hidden) {
+                                                        $$("menu").show();
+                                                    } else {
+                                                        $$("menu").hide();
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                view:'search',
+                                                id: 'NotesList_input',
+
+                                                placeholder: 'Найти...',
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        view: 'list',
+                                        id: 'NotesList',
+                                        data: ' ', // НЕ УДАЛЯТЬ! Иначе не произайдет прогрузки
+                                                    // Я глупый или да? Все и так работает без этого. ToDo: Проверить
+
+                                        select: true,
+                                        drag: true,
+                                        scroll: 'auto',
+                                        template:"#rank#. #title# <span class='webix_icon mdi mdi-close remove-icon' title='Remove'></span>",
+
+                                        onContext:{}, // Позволяет использовать свое контекстное меню
+                                        onClick:{
+                                            "remove-icon": function(ev, id){
+                                                $$("NotesList").remove(id);
                                             }
                                         }
                                     },
-                                    {
-                                        view:'search',
-                                        id: 'NotesList_input',
 
-                                        placeholder: 'Найти...',
-                                    }
                                 ]
                             },
                             {
-                                view: 'list',
-                                id: 'NotesList',
-                                data: ' ', // НЕ УДАЛЯТЬ! Иначе не произайдет прогрузки
-                                            // Я глупый или да? Все и так работает без этого. ToDo: Проверить
+                                // Элемент с настройками
+                                type: 'line',
+                                id: 'Dos', // ToDO: Изменить название
 
-                                select: true,
-                                drag: true,
-                                scroll: 'auto',
-                                template:"#rank#. #title# <span class='webix_icon mdi mdi-close remove-icon' title='Remove'></span>",
+                                rows: [
+                                    {
+                                        view:"toolbar",
+                                        id:"fwa",
+                                        height: 40,
+                                        type: 'clean',
 
-                                onContext:{}, // Позволяет использовать свое контекстное меню
-                                onClick:{
-                                    "remove-icon": function(ev, id){
-                                        $$("NotesList").remove(id);
-                                    }
-                                }
-                            },
+                                        cols: [
+                                            {
+                                                view: 'icon',
+                                                icon: 'wxi-angle-left',
+                                                click: function(){
+                                                    $$("viewss").back();
+                                                }
+                                            },
+                                            {
+                                                view: 'label',
+                                                label: 'Настройки',
+                                            },
+                                            {
+                                                view: 'icon',
+                                                icon: 'wxi-check',
+                                                click: function(){
+                                                    setEnvData();
+                                                }
+                                            },
+                                        ]
+                                    },
+                                    {
+                                        view: 'form',
+                                        id: 'settings_form',
+                                        elements: [
+                                            {
+                                                view: 'counter',
+                                                id: 'note_max_length',
+                                                label: 'Длина заметки',
+                                                labelWidth: 155,
+                                                name: 'boba',
+                                                value: 1, // ToDo: Вставить переменную
+                                                min: 1,
+                                                max: 99999,
+                                            },
+                                            {
+                                                view: 'counter',
+                                                id: 'log_max_size',
+                                                label: 'Размер логов',
+                                                labelWidth: 155,
+                                                name: 'boba',
+                                                value: 1, // ToDo: Вставить переменную. А предачу сделать в КБ
+                                                min: 1,
+                                                max: 99999,
+                                            },
+                                            {
 
-                        ]
+                                            },
+                                            {
+
+                                            }
+                                        ]
+                                    },
+
+                                ]
+                            }
+                        ],
+                        
                     },
                     {
                         // Текстовое поле справа
@@ -254,6 +342,9 @@ webix.ready(function(){
                             {
                                 view:"toolbar",
                                 id:"currNoteToolbar",
+                                height: 40,
+
+
                                 cols: [
                                     {
                                         
@@ -466,19 +557,7 @@ webix.ready(function(){
                             break;
 
                         case '3':
-                            webix.prompt({
-                                title:"Изменение длины заметки",
-                                text:"Введите новое значение длины заметки",
-                                ok:"Изменить",
-                                cancel:"Отменить",
-                                input:{
-                                required:true,
-                                placeholder:"Ваша длина",
-                                },
-                                width: 350,
-                            }).then(function(result) {
-                                setData(result);
-                            });
+                            $$('Dos').show();
                             break;
                     };
 

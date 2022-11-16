@@ -49,7 +49,7 @@ Route::prefix('env')->group(function () {
 
     Route::get('/getData', [EnvController::class, 'getData']); // Изменить название
 
-    Route::get('/setData/{noteMaxLength}', [EnvController::class, 'setData']); // Изменить название
+    Route::get('/setData/{jsonSettings}', [EnvController::class, 'setData']); // Изменить название
 });
 
 

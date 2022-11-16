@@ -12,13 +12,13 @@ class EnvController extends Controller
         return env('NOTE_MAX_LENGTH', -1);
     }
 
-    public function setData($noteMaxLength) {
+    public function setData($jsonSettings) { // Должен из JSON сам менять все данные ToDo: Сделать
         $path = base_path('.env');
         $pr_value = env('NOTE_MAX_LENGTH', -1);
 
         if (File::exists($path)) {
             File::put($path, str_replace(
-                'NOTE_MAX_LENGTH = '.$pr_value, 'NOTE_MAX_LENGTH = '.$noteMaxLength, File::get($path)
+                'NOTE_MAX_LENGTH = '.$pr_value, 'NOTE_MAX_LENGTH = '.$jsonSettings, File::get($path)
             ));
         }
 
