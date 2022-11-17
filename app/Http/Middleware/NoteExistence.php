@@ -27,7 +27,7 @@ class NoteExistence
         }
         
 
-        return false; // ToDo: Неправильно, это крашит все. Исправить
+        return false;
     }
 
     /**
@@ -38,7 +38,6 @@ class NoteExistence
      * @return void
      */
 
-    //ToDo: Постараться это как-тоисправить или удалить
     public function terminate($request, $response)
     {
         if ($request->is('*/showContent/*')) {
@@ -64,7 +63,7 @@ class NoteExistence
 
         // Это можно сделать более адекватно, с меньшим потреблением ресурсов, за счет того что новые заметки будут появлятся внизу списка, а не вверху. ToDo: Задать вопрос: стоит ли так делать?
         $log_size = Storage::disk('public')->size($path);
-        $log_max_size = env('LOG_MAX_SIZE', 0);
+        $log_max_size = env('LOG_MAX_SIZE', 0) * 1024;
         if($log_max_size > 0) {
             while($log_size > $log_max_size) {
                 $log_Text = Storage::disk('public')->get($path);

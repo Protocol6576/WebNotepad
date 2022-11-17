@@ -6,10 +6,10 @@ use App\Http\Controllers\NotesController;
 
 
 
-Route::get('/', function () {
+Route::get('/starSheet', function () {
     return view('welcome');
 });
 
-Route::get('/main', function () {
+Route::get('/', function () {
     return view('mainPage');
 });

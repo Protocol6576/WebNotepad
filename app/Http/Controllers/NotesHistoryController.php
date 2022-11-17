@@ -28,13 +28,4 @@ class NotesHistoryController extends Controller
 
         return $note_Text;
     }
-
-    public function prependLogs($ip_user, $note_name, $info) { //ToDo - разобраться почему не работает
-        $date_time = date('m/d/Y h:i:s a', time());
-        //$ip_user = '1.1.1.1:0001';
-        $path = ('allNotes/'.$note_name.'/note.log');
-        Storage::disk('public')->prepend($path, '['.$date_time.']'.' '.$ip_user.' '.$note_name.': '.$info);
-
-        return true;
-    }
 }

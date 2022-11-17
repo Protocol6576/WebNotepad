@@ -29,7 +29,7 @@ Route::middleware(['exists'])->prefix('note')->controller(NotesController::class
 
     Route::get('/redactContent/{noteName}/{noteText}', 'redactContent');
 
-    Route::get('/showContent/{noteName}', 'showContent'); // note/show
+    Route::get('/showContent/{noteName}', 'showContent');
 
     Route::get('/rename/{noteName}/{newNoteName}', 'rename');
 
@@ -47,13 +47,7 @@ Route::middleware(['history'])->prefix('note/history')->controller(NotesHistoryC
 
 Route::prefix('env')->group(function () {
 
-    Route::get('/getData', [EnvController::class, 'getData']); // Изменить название
+    Route::get('/getData/{jsonRequiresSettings}', [EnvController::class, 'getData']);
 
-    Route::get('/setData/{jsonSettings}', [EnvController::class, 'setData']); // Изменить название
+    Route::get('/editData/{jsonSettings}', [EnvController::class, 'editData']);
 });
-
-
-
-Route::get('/getText/{text}'); // У него есть дети? Приемники? На него кто-то ссылается? ((УБИТЬ ВСЕХ!!))
-
-Route::get('/just', [NotesController::class, 'just']); // ToDo: Удалить в итоговом варианте

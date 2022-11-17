@@ -1,67 +1,50 @@
-// Глобальные переменные 
-
-var myData = [ // Нужно для проверки работоспособности списка. ToDo: Удалить в итоговом варианте
-    {
-        title: 'Заметка №1',
-        rank: '1',
-    },
-    {
-        title: 'Заметка №2',
-        rank: '2',
-    },
-    {
-        title: 'Заметка №3',
-        rank: '3',
-    }
-]
-
+// ** Глобальные переменные **
+let settings = {
+    NOTE_MAX_LENGTH: 999,
+    LOG_MAX_SIZE: 999,
+};
 var autosave_timerId = 1;
 var autosave_eventId = 1;
-var current_note_History = '';
+var current_note_History = ''; // Нужна для запоминания названия заметки при переходе между элементами (Список заметок и жлемент истории)
 
 
-
-// ToDo: Сделай чтото с этим..
-function getData() {
-    webix.ajax().get('api/env/getData').then(function(data){
-        data = data.text();
-        data = Number(data);
-
-        $$("NoteTextArea").define("attributes", { maxlength: data });
-        $$("NoteTextArea").refresh();
-    });
-};
-
-// ToDo: Сделай чтото с этим..
-function setEnvData(noteMaxLength) {
-    let settings = {
-        NOTE_MAX_LENGTH: $$('note_max_length').getValue(),
-        LOG_MAX_SIZE: $$('log_max_size').getValue(),
-    };
-
-    webix.message(settings.NOTE_MAX_LENGTH);
-
-    /*
-
-    let jsonSettings = JSON.stringify(settings);
-
-    webix.ajax().get('api/env/setData/' + jsonSettings).then(function(data){
-        getEnvData();
-    });
-    */
-};
 
 // *** Функции по обращению к серверу ***
 
+// *** Функции для работы с настрйоками ***
+
+function getEnvData() {
+    var jsonSettings = JSON.stringify(settings);
+    webix.ajax().get('api/env/getData/' + jsonSettings).then(function(data) {
+        data = data.json();
+        settings = data;
+        setEnvData();
+    });
+};
+
+function editEnvData() {
+
+    let jsonSettings = JSON.stringify(settings);
+    var reqResult = webix.ajax().get('api/env/editData/' + jsonSettings);
+    setEnvData();
+
+    if(reqResult) {
+        webix.message('Настройки изменены');
+    } else {
+        webix.message('Произошла ошибка, повторите позже');
+    }
+};
+
+// *** Функции для работы с заметками ***
+
 function loadNoteHistoryList(noteName) {
-    $$("NotesHistoryList").clearAll(); // ToDo: Заменить на аргумент в функции load (Который true)
+    $$("NotesHistoryList").clearAll();
     $$("NotesHistoryList").load(function() {
         return webix.ajax().get('api/note/history/getTitles/' + noteName);
     });
 }
 
 function showHistoryContent(noteName, historyName) { // ToDo: Повторяется код с showNoteContent, попробовать объеденить
-    //$$("NoteTextArea").blockEvent(); // ToDo: Разобраться нужно ли, и удалить если будет не нужно
     $$("NoteTextArea").disable();
     $$("NoteTextArea").setValue(' ');
 
@@ -77,18 +60,16 @@ function showHistoryContent(noteName, historyName) { // ToDo: Повторяет
         $$("NoteTextArea").setValue(data);
         $$("NoteTextArea").enable();
         $$("NoteTextArea").focus();
-        //$$("NoteTextArea").unblockEvent(); // Если перенести ниже (вне границы .then) то .setValue происходит уже после .unblockEvent, почему-то. ToDo: Разобраться почему
     });
 
 }
 
 function loadNoteList() {
-    $$("NotesList").clearAll(); // ToDo: Заменить на аргумент в функции load (Который true)
+    $$("NotesList").clearAll();
     $$("NotesList").load(function() {
         return webix.ajax().get('api/note/getTitles');
     });
-    disableTextarea();  // И почему оно блин тут?
-                        // ToDo: А может оно нужно?
+    disableTextarea();
 }
 
 function redactNoteContent(noteName, newText) {
@@ -103,8 +84,6 @@ function redactNoteContent(noteName, newText) {
 }
 
 function showNoteContent(noteName) {
-
-    //$$("NoteTextArea").blockEvent(); // ToDo: Разобраться нужно ли, и удалить если будет не нужно
     $$("NoteTextArea").disable();
     $$("NoteTextArea").setValue(' ');
 
@@ -120,7 +99,6 @@ function showNoteContent(noteName) {
         $$("NoteTextArea").setValue(data);
         $$("NoteTextArea").enable();
         $$("NoteTextArea").focus();
-        //$$("NoteTextArea").unblockEvent(); // Если перенести ниже (вне границы .then) то .setValue происходит уже после .unblockEvent, почему-то. ToDo: Разобраться почему
     });
 
 }
@@ -167,9 +145,11 @@ function deleteNote(noteName, noteId) {
     }
 }
 
-// ** Остальные функции **
 
-function disableTextarea() { // "Разобраться почему всегда == 0" - потому что при возврате false в контроллере все крашится. ToDo: Разобраться. А также посмотреть про overlay Box
+
+// *** Остальные функции ***
+
+function disableTextarea() {
     var notesCount = $$("NotesList").count();
 
     $$("NoteTextArea").disable();
@@ -184,7 +164,7 @@ function autosave_set(autosave_value) {
     if(autosave_value) {
         autosave_eventId = $$("NoteTextArea").attachEvent("onKeyPress", function() {
             clearTimeout(autosave_timerId);
-            var itemId = $$("NotesList").getSelectedItem().title; // ToDo: Изменить (выглядит ужасно)
+            var itemId = $$("NotesList").getSelectedItem().title;
             var newText = $$("NoteTextArea").getValue();
     
             autosave_timerId = setTimeout(redactNoteContent, 3000, itemId, newText);
@@ -194,8 +174,17 @@ function autosave_set(autosave_value) {
     }
 }
 
-function showMessage(text) { // ToDo: Удалить в итоговом варианте 
-    webix.message(text);
+function setEnvData() {
+    $$("NoteTextArea").define("attributes", { maxlength: settings.NOTE_MAX_LENGTH });
+    $$("NoteTextArea").refresh();
+
+    $$('note_max_length').setValue(settings.NOTE_MAX_LENGTH);
+    $$('log_max_size').setValue(settings.LOG_MAX_SIZE);
+}
+
+function updateSettings(note_max_length, log_max_size) {
+    settings.NOTE_MAX_LENGTH = note_max_length;
+    settings.LOG_MAX_SIZE = log_max_size;
 }
 
 
@@ -208,14 +197,14 @@ webix.ready(function(){
             {
                 cols: [
                     {
-                        id: 'viewss', // ToDo: Изменить название
-                        width: 300,
+                        id: 'menuViews',
+                        width: 300, // Nutrientibus off tractor driver
 
                         cells : [
                             {
                                 // Элемент со списком заметок
                                 type: 'clean',
-                                id: 'Uno', // ToDO: Изменить название
+                                id: 'mainMenu',
 
                                 rows: [
                                     {
@@ -248,19 +237,13 @@ webix.ready(function(){
                                         view: 'list',
                                         id: 'NotesList',
                                         data: ' ', // НЕ УДАЛЯТЬ! Иначе не произайдет прогрузки
-                                                    // Я глупый или да? Все и так работает без этого. ToDo: Проверить
 
                                         select: true,
                                         drag: true,
                                         scroll: 'auto',
-                                        template:"#rank#. #title# <span class='webix_icon mdi mdi-close remove-icon' title='Remove'></span>",
+                                        template:"#title#",
 
                                         onContext:{}, // Позволяет использовать свое контекстное меню
-                                        onClick:{
-                                            "remove-icon": function(ev, id){
-                                                $$("NotesList").remove(id);
-                                            }
-                                        }
                                     },
 
                                 ]
@@ -268,12 +251,12 @@ webix.ready(function(){
                             {
                                 // Элемент с настройками
                                 type: 'line',
-                                id: 'Dos', // ToDO: Изменить название
+                                id: 'settingsMenu',
 
                                 rows: [
                                     {
                                         view:"toolbar",
-                                        id:"fwa",
+                                        id:"settingsToolbar",
                                         height: 40,
                                         type: 'clean',
 
@@ -282,7 +265,7 @@ webix.ready(function(){
                                                 view: 'icon',
                                                 icon: 'wxi-angle-left',
                                                 click: function(){
-                                                    $$("viewss").back();
+                                                    $$("menuViews").back();
                                                 }
                                             },
                                             {
@@ -293,7 +276,11 @@ webix.ready(function(){
                                                 view: 'icon',
                                                 icon: 'wxi-check',
                                                 click: function(){
-                                                    setEnvData();
+                                                    var note_max_length = $$('note_max_length').getValue();
+                                                    var log_max_size = $$('log_max_size').getValue();
+
+                                                    updateSettings(note_max_length, log_max_size);
+                                                    editEnvData();
                                                 }
                                             },
                                         ]
@@ -306,21 +293,23 @@ webix.ready(function(){
                                                 view: 'counter',
                                                 id: 'note_max_length',
                                                 label: 'Длина заметки',
+                                                format: '1,111',
                                                 labelWidth: 155,
-                                                name: 'boba',
-                                                value: 1, // ToDo: Вставить переменную
+                                                name: 'note_max_length',
+                                                value: 1,
                                                 min: 1,
-                                                max: 99999,
+                                                max: 9999,
                                             },
                                             {
                                                 view: 'counter',
                                                 id: 'log_max_size',
                                                 label: 'Размер логов',
+                                                format: '1,111',
                                                 labelWidth: 155,
-                                                name: 'boba',
-                                                value: 1, // ToDo: Вставить переменную. А предачу сделать в КБ
+                                                name: 'log_max_size',
+                                                value: 1,
                                                 min: 1,
-                                                max: 99999,
+                                                max: 999,
                                             },
                                             {
 
@@ -362,7 +351,7 @@ webix.ready(function(){
                                         view: 'icon',
                                         icon: 'wxi-file',
                                         click: function() {
-                                            var itemId = $$("NotesList").getSelectedItem().title; // "Изменить (выглядит ужасно)" - а разве это так? ToDo: Подумать на этим
+                                            var itemId = $$("NotesList").getSelectedItem().title;
                                             var newText = $$("NoteTextArea").getValue();
                                             redactNoteContent(itemId, newText);
                                         },
@@ -371,7 +360,7 @@ webix.ready(function(){
                                 
                             },
                             {
-                                view: 'textarea', // ToDo: Убрать блин эти бортики! БЕСЯТ!!
+                                view: 'textarea',
                                 id: 'NoteTextArea',
                                 placeholder: 'Напишите что-то здесь',
 
@@ -492,7 +481,7 @@ webix.ready(function(){
                     view: 'icon',
                     icon: 'wxi-close',
                     click: function() {
-                        $$('NotesHistoryList').unselect();
+                        $$('NotesHistoryList').unselectAll();
                         $$('NotesHistoryWindow').hide();
                     }
                 }
@@ -502,7 +491,6 @@ webix.ready(function(){
             view: 'list',
             id: 'NotesHistoryList',
             data: ' ', // НЕ УДАЛЯТЬ! Иначе не произайдет прогрузки
-                        // Я глупый или да? Все и так работает без этого. ToDo: Проверить
 
             select: true,
             drag: true,
@@ -557,11 +545,12 @@ webix.ready(function(){
                             break;
 
                         case '3':
-                            $$('Dos').show();
+                            $$('settingsMenu').show();
                             break;
                     };
 
                     $$("menu").hide();
+                    $$('Sidemenu_list').unselectAll();
                 }
             }
         }
@@ -591,6 +580,15 @@ webix.ready(function(){
         
     });
 
+    // Загрузка текста из заметки
+    $$("NotesList").attachEvent("onAfterAdd", function() {
+
+        if(!$$("NotesList").getSelectedId()) {
+            disableTextarea();
+        }
+        
+    });
+
     // Загрузка текста из истории
     $$("NotesHistoryList").attachEvent("onSelectChange", function() {
 
@@ -611,6 +609,6 @@ webix.ready(function(){
     // *** Функциии после инициализации ***
 
     loadNoteList();
-    getData(); // "разобратсья почему не запускается" - Не работает из-за $$("NoteTextArea").attachEvent("onChange") ToDo: Разобраться почему
+    getEnvData();
 
 });
