@@ -15,8 +15,8 @@ class NoteExistence
      * @param  \Closure(\Illuminate\Http\Request): (\Illuminate\Http\Response|\Illuminate\Http\RedirectResponse)  $next
      * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
      */
-    public function handle(Request $request, Closure $next)
-    {
+
+    public function handle(Request $request, Closure $next) {
         $noteName = $request->route('noteName');
         $path = ('allNotes/'.$noteName);
 
@@ -38,8 +38,7 @@ class NoteExistence
      * @return void
      */
 
-    public function terminate($request, $response)
-    {
+    public function terminate($request, $response) {
         if ($request->is('*/showContent/*')) {
             return false;
         }

@@ -1,4 +1,4 @@
-// ** Глобальные переменные **
+//#region ** Глобальные переменные **
 let settings = {
     NOTE_MAX_LENGTH: 999,
     LOG_MAX_SIZE: 999,
@@ -7,11 +7,13 @@ var autosave_timerId = 1;
 var autosave_eventId = 1;
 var current_note_History = ''; // Нужна для запоминания названия заметки при переходе между элементами (Список заметок и жлемент истории)
 
+//#endregion
 
 
-// *** Функции по обращению к серверу ***
 
-// *** Функции для работы с настрйоками ***
+//#region *** Функции по обращению к серверу ***
+
+    //#region *** Функции для работы с настрйоками ***
 
 function getEnvData() {
     var jsonSettings = JSON.stringify(settings);
@@ -35,7 +37,9 @@ function editEnvData() {
     }
 };
 
-// *** Функции для работы с заметками ***
+//#endregion
+
+    //#region *** Функции для работы с заметками ***
 
 function loadNoteHistoryList(noteName) {
     $$("NotesHistoryList").clearAll();
@@ -145,9 +149,11 @@ function deleteNote(noteName, noteId) {
     }
 }
 
+//#endregion
 
+//#endregion
 
-// *** Остальные функции ***
+//#region *** Остальные функции ***
 
 function disableTextarea() {
     var notesCount = $$("NotesList").count();
@@ -187,11 +193,14 @@ function updateSettings(note_max_length, log_max_size) {
     settings.LOG_MAX_SIZE = log_max_size;
 }
 
+//#endregion
 
 
 
 
-webix.ready(function(){
+
+webix.ready(function() {
+    // Основной вшений вид
     webix.ui({
         rows: [
             {
@@ -385,7 +394,7 @@ webix.ready(function(){
 
 
 
-    // *** Дополнительные элементы интерфейса ***
+    //#region *** Дополнительные элементы интерфейса ***
 
     // Появление Прогрес-бара при (пере)загрузке
     webix.extend($$("NotesList"), webix.ProgressBar);
@@ -556,9 +565,11 @@ webix.ready(function(){
         }
     });
 
+    //#endregion
 
 
-    // *** События ***
+
+    //#region *** События ***
 
     // Фильтрация списка заметок
     $$("NotesList_input").attachEvent("onTimedKeyPress", function() {
@@ -604,11 +615,15 @@ webix.ready(function(){
         autosave_set(newValue);
     });
 
+    //#endregion
+
 
     
-    // *** Функциии после инициализации ***
+    //#region *** Функциии после инициализации ***
 
     loadNoteList();
     getEnvData();
+
+    //#endregion
 
 });
